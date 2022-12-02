@@ -1,0 +1,109 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello, world!
+
+      # Runs a set of commands using the runners shell
+      - name: Run a multi-line script
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+
+import os
+import nltk
+import tensorflow as tf
+
+# Pedir archivos de Word
+while True:
+    filename = input('Ingrese el nombre del archivo de Word (o "salir" para finalizar): ')
+    if filename == 'salir':
+        break
+    if not filename.endswith('.doc'):
+        print('El archivo debe ser un archivo de Word (.doc)')
+        continue
+    if not os.path.exists(filename):
+        print('El archivo no existe')
+        continue
+    
+    # Abrir archivo
+    with open(filename, 'r') as file:
+        text = file.read()
+    
+    # Tokenizar texto
+    tokens = nltk.word_tokenize(text)
+    
+    # Guardar tokens en archivo
+    with open('TextSilo.txt', 'a') as file:
+        file.write(' '.join(tokens) + '\n')
+
+# Cargar archivo de tokens
+with open('TextSilo.txt', 'r') as file:
+    tokens = file.readlines()
+
+# Crear dataset
+dataset = tf.data.Dataset.from_tensor_slices(tokens)
+
+# Dividir en batches y shuffle
+dataset = dataset.batch(128).shuffle(1024)
+
+# Crear modelo
+model = tf.keras.Sequential([
+    tf.keras.layers.Embedding(1000, 64),
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
+    tf.keras.layers.Dense(64, activation='relu'),
+    tf.keras.layers.Dense(1)
+])
+
+# Compilar modelo
+model.compile(loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+              optimizer=tf.keras.optimizers.Adam(1e-4),
+              metrics=['accuracy'])
+
+# Entrenar modelo
+history = model.fit(dataset, epochs=10)
+
+# Guardar modelo
+model.save('model_tensorflow.h5')
+
+Para unir el modelo generado a otro, se puede utilizar el siguiente código:
+
+import tensorflow as tf
+
+# Cargar modelos
+model1 = tf.keras.models.load_model('model1.h5')
+model2 = tf.keras.models.load_model('model2.h5')
+
+# Unir modelos
+combined_model = tf.keras.Sequential([
+    model1,
+    model2
+])
+
+# Guardar modelo combinado
+combined_model.save('combined_model.h5')
